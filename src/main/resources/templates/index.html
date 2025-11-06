@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Push Notification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<button type="button" class="btn btn-primary">Primary</button>
+
+<div>
+    <button id="sendMessage" onclick="sendMessage();">Send</button>
+    <input type="text" id="text" placeholder="Text"/>
+</div>
+<br/>
+
+<div>
+    <button id="sendPrivateMessage" onclick="sendPrivateMessage();">Send</button>
+    <input type="text" id="privateText" placeholder="Private Message"/>
+    <input type="text" id="to" placeholder="To"/>
+</div>
+<br/>
+<br/>
+<br/>
+<div id="messages"></div>
+</body>
+<script>
+    var stompClient = null;
+    var privateStompClient = null;
+
+    var socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (frame) {
+        console.log(frame);
+        stompClient.subscribe('/all/messages', function (result) {
+            show(JSON.parse(result.body))
+        });
+    });
+
+    socket = new SockJS('/ws');
+    privateStompClient = Stom.over(socket);
+    privateStompClient.connect({}, function (frame) {
+        console.log(frame);
+        privateStompClient.subscribe('/user/specific', function (result) {
+            console.log(result.body)
+            show(JSON.parse(result.body));
+        })
+    })
+
+    function sendMessage() {
+        var text = document.getElementById('text').value;
+        stompClient.send("/app/application", {}, JSON.stringify({'text': text}));
+    }
+
+    function sendPrivateMessage() {
+        var text = document.getElementById('privateText').value;
+        var to = document.getElementById('to').value;
+        stompClient.send("/app/private", {}, JSON.stringify({'text': text, 'to': to}));
+    }
+
+    function show(message) {
+        var response = document.getElementById('messages');
+        var p = document.createElement('p');
+        p.innerHTML = "message: " + message.text;
+        response.appendChild(p);
+    }
+
+</script>
+
+</html>
